@@ -1,4 +1,4 @@
 python-telegram-bot==13.9
 requests==2.26.0
-pip install python-telegram-bot==13.9
-python3 main.py
+requests
+python-telegram-bot
