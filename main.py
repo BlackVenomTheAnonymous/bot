@@ -81,15 +81,13 @@ def lookup_bin(update, context):
         message += f"🌍 Country: `{country_name} {country_emoji}`\n"
         message += f"💰 Currency: `{currency}`"
 
-        # Inline keyboard button
+        # Create a InlineKeyboardMarkup with the button
         button = InlineKeyboardButton('🌐 𓆩𝗫𝗲𝗿𝗿𝗼𝘅𓆪「Zone ↯」 🌐', url='https://t.me/xerrox_army')
-
-        # Create an inline keyboard with the button
         keyboard = InlineKeyboardMarkup([[button]])
 
-        # Send the BIN lookup response message with the inline keyboard
-        update.message.reply_text(message, parse_mode='Markdown', reply_markup=keyboard)
-        context.bot.send_animation(chat_id=update.effective_chat.id, animation='https://gifdb.com/images/file/dark-anime-mattis-dovier-animation-jlbiiyihz0wn8ij0.gif')
+        # Send the response message with monospace formatting and GIF
+        response_message = f"```\n{message}\n```"
+        context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://gifdb.com/images/file/dark-anime-mattis-dovier-animation-jlbiiyihz0wn8ij0.gif', caption=response_message, parse_mode='Markdown', reply_markup=keyboard)
     else:
         # Handle API request errors
         update.message.reply_text("An error occurred while performing the BIN lookup. Please try again later.")
