@@ -5,7 +5,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 import logging
 import subprocess
 
-TOKEN = '6112737138:AAGAkmwj70Z83uDyUZWbLHKDgYsxttWA6q4'
+TOKEN = '6112737138:AAHZOf4hjIedYOMMztIIyI9hWcd4VkHPdI0'
 
 def start(update, context):
     """Handle the /start command and send a welcome message."""
