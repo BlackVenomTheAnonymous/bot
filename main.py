@@ -2,8 +2,7 @@
 import re
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-import logging
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 # Define your Telegram bot token here
 TOKEN = '6112737138:AAGVMf3FtbLSsyETATGJR2zslIHohnVlUyQ'
@@ -19,10 +18,10 @@ def start(update, context):
     message += "3️⃣ Enjoy exploring BIN information with the bot! 😊"
 
     # Create an inline button for the /help command
-    help_button = InlineKeyboardButton('📚 Help', callback_data='help')
+    button = InlineKeyboardButton('🌐 𓆩𝗫𝗲𝗿𝗿𝗼𝘅𓆪「Zone ↯」 🌐', url='https://t.me/xerrox_army')
 
     # Create an inline keyboard markup with the help button
-    keyboard = InlineKeyboardMarkup([[help_button]])
+    button = InlineKeyboardButton('🌐 𓆩𝗫𝗲𝗿𝗿𝗼𝘅𓆪「Zone ↯」 🌐', url='https://t.me/xerrox_army')
 
     # Send the welcome message with image and inline button
     context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://i.ibb.co/GMCc1VV/XXX.jpg', caption=message, reply_markup=keyboard)
@@ -59,8 +58,8 @@ def lookup_bin(update, context):
         bin_data = response.json()
 
         # Extract the relevant information
-        scheme = bin_data['scheme']
-        brand = bin_data['brand']
+        scheme = bin_data.get('scheme', 'N/A')
+        brand = bin_data.get('brand', 'N/A')
         bank_name = bin_data['bank'].get('name', 'N/A')
         bank_phone = bin_data['bank'].get('phone', 'N/A')
         country_name = bin_data['country'].get('name', 'N/A')
