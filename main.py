@@ -35,26 +35,10 @@ def main():
     updater = Updater(TOKEN, use_context=True)
     dispatcher = updater.dispatcher
 
-    # Set up logging
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-    # Get the list of command files in the commands folder
-    command_files = os.listdir('commands')
-
-    # Import and add command handlers from the command files
-    for file in command_files:
-        if file.endswith('.py') and file != '__init__.py':
-            module_name = file[:-3]
-            module = __import__('commands.' + module_name, fromlist=[module_name])
-            command_instance = getattr(module, module_name.capitalize())()
-            dispatcher.add_handler(command_instance.handler())
-
-    # Add the start command handler separately
-    dispatcher.add_handler(CommandHandler("start", start))
+    # Import and add command handlers from the commands folder
+    import commands
+    commands.add_handlers(dispatcher)
 
     # Start the bot
     updater.start_polling()
     updater.idle()
-
-if __name__ == '__main__':
-    main()
