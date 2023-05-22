@@ -89,6 +89,7 @@ def lookup_bin(update, context):
 
         # Send the BIN lookup response message with the inline keyboard
         update.message.reply_text(message, parse_mode='Markdown', reply_markup=keyboard)
+        context.bot.send_animation(chat_id=update.effective_chat.id, animation='https://gifdb.com/images/file/dark-anime-mattis-dovier-animation-jlbiiyihz0wn8ij0.gif')
     else:
         # Handle API request errors
         update.message.reply_text("An error occurred while performing the BIN lookup. Please try again later.")
