@@ -6,7 +6,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 import logging
 
 # Define your Telegram bot token here
-TOKEN = '6112737138:AAFkeqxG9LODV6jCll7jZI5nQ8KFEkDLWPw'
+TOKEN = '6112737138:AAFAQNHx6v3X1dnbCwju03HCFzGiPeroTp8'
 
 def start(update, context):
     """Handle the /start command and send a welcome message."""
