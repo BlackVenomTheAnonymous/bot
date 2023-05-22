@@ -45,6 +45,14 @@ def lookup_bin(update, context):
     # Extract the BIN number from the user's message
     bin_number = update.message.text.split('/bin ')[1]
 
+    if not bin_number:
+        # Guide the user on how to use the /bin command
+        message = "To perform a BIN lookup, use the /bin command followed by a valid BIN number.\n\n"
+        message += "Example: /bin 123456"
+
+        update.message.reply_text(message)
+        return
+
     # Construct the API URL with the provided BIN number
     url = f"https://lookup.binlist.net/{bin_number}"
 
@@ -65,16 +73,22 @@ def lookup_bin(update, context):
         currency = bin_data['country'].get('currency', 'N/A')
 
         # Prepare the response message with custom formatting and emojis
-        message = f"✨ BIN: {bin_number}\n\n"
-        message += f"💳 Scheme: {scheme}\n"
-        message += f"🏷️ Brand: {brand}\n"
-        message += f"🏦 Bank: {bank_name}\n"
-        message += f"📞 Bank Phone: {bank_phone}\n"
-        message += f"🌍 Country: {country_name} {country_emoji}\n"
-        message += f"💰 Currency: {currency}"
+        message = f"✨ BIN: `{bin_number}`\n\n"
+        message += f"💳 Scheme: `{scheme}`\n"
+        message += f"🏷️ Brand: `{brand}`\n"
+        message += f"🏦 Bank: `{bank_name}`\n"
+        message += f"📞 Bank Phone: `{bank_phone}`\n"
+        message += f"🌍 Country: `{country_name} {country_emoji}`\n"
+        message += f"💰 Currency: `{currency}`"
 
-        # Send the BIN lookup response message
-        update.message.reply_text(message)
+        # Inline keyboard button
+        button = InlineKeyboardButton('🌐 𓆩𝗫𝗲𝗿𝗿𝗼𝘅𓆪「Zone ↯」 🌐', url='https://t.me/xerrox_army')
+
+        # Create an inline keyboard with the button
+        keyboard = InlineKeyboardMarkup([[button]])
+
+        # Send the BIN lookup response message with the inline keyboard
+        update.message.reply_text(message, parse_mode='Markdown', reply_markup=keyboard)
     else:
         # Handle API request errors
         update.message.reply_text("An error occurred while performing the BIN lookup. Please try again later.")
@@ -92,6 +106,7 @@ def main():
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('help', help_command))
     dispatcher.add_handler(CommandHandler('bin', lookup_bin))
+    dispatcher.add_handler(MessageHandler(Filters.command, help_command))  # Handle unknown commands
 
     # Start the bot
     updater.start_polling()
