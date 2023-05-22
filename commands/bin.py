@@ -1,8 +1,8 @@
 from telegram.ext import CommandHandler
 
-class Bin(CommandHandler):
-    def __init__(self):
-        super().__init__('bin', self.lookup_bin)
+class Bin:
+    def handler(self):
+        return CommandHandler('bin', self.lookup_bin)
 
     def lookup_bin(self, update, context):
         """Handle the BIN lookup process."""
