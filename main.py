@@ -1,115 +1,62 @@
-import logging
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import re
 import requests
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import logging
+import os
 
-# Set up logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-# Define your bot token
-TOKEN = '6112737138:AAG9lqNyne9byVJWUXZYloGHstzEJ6NcrcM'
-
-# Create an instance of the Updater class
-updater = Updater(TOKEN, use_context=True)
-
-# Get the dispatcher to register handlers
-dispatcher = updater.dispatcher
-
+TOKEN = '6112737138:AAGVMf3FtbLSsyETATGJR2zslIHohnVlUyQ'
 
 def start(update, context):
-    """Send a welcome message when the command /start is issued."""
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Hi! I'm your bot. Send /help for assistance.")
+    """Handle the /start command and send a welcome message."""
+    # Welcome message with formatting
+    message = "🌟 Welcome to the BIN lookup bot! 🌟\n\n"
+    message += "This bot helps you retrieve information about BIN (Bank Identification Number) numbers.\n\n"
+    message += "Here's how to use the bot:\n"
+    message += "1️⃣ Send a BIN number to get its information.\n"
+    message += "2️⃣ Use the /help command to see the list of available commands and their usage.\n"
+    message += "3️⃣ Enjoy exploring BIN information with the bot! 😊"
 
+    # Create an inline button for the /help command
+    help_button = InlineKeyboardButton('📚 Help', callback_data='help')
+
+    # Create an inline keyboard markup with the help button
+    keyboard = InlineKeyboardMarkup([[help_button]])
+
+    # Send the welcome message with image and inline button
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://i.ibb.co/GMCc1VV/XXX.jpg', caption=message, reply_markup=keyboard)
 
 def help_command(update, context):
-    """Send a help message when the command /help is issued."""
-    help_text = "You can use the following commands:\n\n"
-    help_text += "/start - Start the bot\n"
-    help_text += "/help - Display this help message\n"
-    help_text += "/bin - Lookup information about a BIN number\n"
-    help_text += "/grab - Process a Stripe link\n"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=help_text)
+    """Handle the /help command and provide the list of available commands."""
+    # Help message with available commands
+    message = "📚 Here are the available commands:\n\n"
+    message += "/start - Start the bot and get a welcome message.\n"
+    message += "/help - View the list of available commands and their usage.\n"
+    message += "/bin [BIN] - Lookup information about a specific BIN number.\n\n"
+    message += "To perform a BIN lookup, simply send a message with a valid BIN number."
 
-
-def lookup_bin(update, context):
-    """Handle the BIN lookup process."""
-    # Extract the BIN number from the user's message
-    bin_number = update.message.text.split('/bin', 1)[-1].strip()
-
-    # Perform BIN lookup using the obtained number
-    bin_data = perform_bin_lookup(bin_number)
-
-    if bin_data:
-        message = f"🔍 BIN Lookup Result:\n\n"
-        message += f"💳 Brand: {bin_data['brand']}\n"
-        message += f"🏦 Bank: {bin_data['bank']}\n"
-        message += f"🌍 Country: {bin_data['country']}\n"
-        message += f"🔒 Type: {bin_data['type']}"
-        update.message.reply_text(message)
-    else:
-        update.message.reply_text("❌ Failed to lookup BIN information.")
-
-
-def perform_bin_lookup(bin_number):
-    """Perform the BIN lookup using an API."""
-    # Make a request to the BIN lookup API with the provided BIN number
-    response = requests.get(f"https://api.example.com/bin/{bin_number}")
-
-    if response.status_code == 200:
-        bin_data = response.json()
-        return bin_data
-    else:
-        return None
-
-
-def process_stripe_link(update, context):
-    """Process the link provided by the user."""
-    # Get the link from the user's input
-    link = update.message.text.split('/grab', 1)[-1].strip()
-
-    # Process the link based on its type
-    if link.startswith('https://checkout.stripe.com/') or link.startswith('https://stripe.com/payments/'):
-        stripe_details = grab_stripe_checkout_details(link)
-        if stripe_details:
-            message = "🔍 Stripe Checkout Details:\n\n"
-            message += f"📧 Email: {stripe_details['email']}\n"
-            message += f"🆔 Session ID: {stripe_details['session_id']}\n"
-            message += f"💲 Amount Due: {stripe_details['amount_due']}\n"
-            message += f"💱 Currency: {stripe_details['currency']}\n"
-            message += f"🔑 PK: {stripe_details['pk']}"
-            update.message.reply_text(message)
-        else:
-            update.message.reply_text("❌ Failed to grab details from the link.")
-    else:
-        update.message.reply_text("ℹ️ Link type not supported.")
-
-
-def grab_stripe_checkout_details(link):
-    """Grab the Stripe checkout details from the provided link."""
-    # Make a request to grab the Stripe details using the link
-    response = requests.get(f"https://api.example.com/grab/{link}")
-
-    if response.status_code == 200:
-        stripe_details = response.json()
-        return stripe_details
-    else:
-        return None
-
-
-# Register the command handlers
-dispatcher.add_handler(CommandHandler('start', start))
-dispatcher.add_handler(CommandHandler('help', help_command))
-dispatcher.add_handler(CommandHandler('bin', lookup_bin))
-dispatcher.add_handler(CommandHandler('grab', process_stripe_link))
-
+    # Send the help message
+    update.message.reply_text(message)
 
 def main():
-    """Start the bot."""
+    """Start the Telegram bot."""
+    # Set up the Telegram bot updater and dispatcher
+    updater = Updater(TOKEN, use_context=True)
+    dispatcher = updater.dispatcher
+
+    # Register the command handlers from the 'commands' folder
+    commands_folder = 'commands'
+    for filename in os.listdir(commands_folder):
+        if filename.endswith('.py'):
+            module_name = filename[:-3]  # Remove the '.py' extension
+            module = __import__(f'{commands_folder}.{module_name}', fromlist=[module_name])
+            command_class = getattr(module, module_name.capitalize())
+            command_instance = command_class()
+            dispatcher.add_handler(command_instance.handler())
+
     # Start the bot
     updater.start_polling()
-
-    # Run the bot until you press Ctrl-C or the process is stopped
     updater.idle()
-
 
 if __name__ == '__main__':
     main()
