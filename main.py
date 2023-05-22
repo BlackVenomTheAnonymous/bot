@@ -1,8 +1,7 @@
 import re
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import logging
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 TOKEN = '6112737138:AAFzbm7uMvsUOUGWUjelp9s4HvpEAEtkDl4'
 
@@ -31,7 +30,8 @@ def help_command(update, context):
     message = "📚 Here are the available commands:\n\n"
     message += "/start - Start the bot and get a welcome message.\n"
     message += "/help - View the list of available commands and their usage.\n"
-    message += "/bin [BIN] - Lookup information about a specific BIN number.\n\n"
+    message += "/bin [BIN] - Lookup information about a specific BIN number.\n"
+    message += "/grab - Grab details from a Stripe checkout link.\n\n"
     message += "To perform a BIN lookup, simply send a message with a valid BIN number."
 
     # Send the help message
@@ -44,7 +44,7 @@ def lookup_bin(update, context):
 
     # Perform BIN lookup using the obtained number
     bin_data = perform_bin_lookup(bin_number)
-    
+
     if bin_data:
         # Prepare the response message with custom formatting and emojis
         message = f"✨ BIN: {bin_number}\n\n"
@@ -100,19 +100,106 @@ def perform_bin_lookup(bin_number):
     except requests.exceptions.RequestException:
         return None
 
+def grab_stripe_details(update, context):
+    """Handle the /grab command and grab details from a Stripe checkout link."""
+    # Prompt the user to enter the Stripe checkout link
+    update.message.reply_text("🔗 Please enter the Stripe checkout link:")
+
+    # Set the bot's next step to handle the user's input
+    context.user_data['next_step'] = 'grab_stripe_link'
+
+def process_stripe_link(update, context):
+    """Process the Stripe checkout link provided by the user."""
+    # Get the Stripe checkout link from the user's input
+    stripe_link = update.message.text
+
+    # Grab the details from the Stripe checkout link
+    stripe_details = grab_stripe_checkout_details(stripe_link)
+
+    if stripe_details:
+        # Prepare the response message with the retrieved details
+        message = "🔍 Stripe Checkout Details:\n\n"
+        message += f"📧 Email: {stripe_details['email']}\n"
+        message += f"🆔 Session ID: {stripe_details['session_id']}\n"
+        message += f"💲 Amount Due: {stripe_details['amount_due']}\n"
+        message += f"💱 Currency: {stripe_details['currency']}\n"
+        message += f"🔑 PK: {stripe_details['pk']}"
+
+        # Send the response message
+        update.message.reply_text(message)
+    else:
+        # Failed to grab details from the Stripe checkout link
+        update.message.reply_text("❌ Failed to grab details from the Stripe checkout link.")
+
+def grab_stripe_checkout_details(stripe_link):
+    """Grab the details from the provided Stripe checkout link."""
+    try:
+        # Make a GET request to the Stripe checkout link
+        response = requests.get(stripe_link)
+
+        # Extract the required details using regex
+        email = re.search(r'"email":\s*?"([^"]+)"', response.text)
+        session_id = re.search(r'"session_id":\s*?"([^"]+)"', response.text)
+        amount_due = re.search(r'"amount_due":\s*?(\d+)', response.text)
+        currency = re.search(r'"currency":\s*?"([^"]+)"', response.text)
+        pk = re.search(r'"pk":\s*?"([^"]+)"', response.text)
+
+        if email and session_id and amount_due and currency and pk:
+            # Create a dictionary with the extracted details
+            stripe_details = {
+                'email': email.group(1),
+                'session_id': session_id.group(1),
+                'amount_due': amount_due.group(1),
+                'currency': currency.group(1),
+                'pk': pk.group(1)
+            }
+
+            return stripe_details
+        else:
+            return None
+    except requests.exceptions.RequestException:
+        return None
+
+def inline_button_callback(update, context):
+    """Handle the callback queries for inline buttons."""
+    query = update.callback_query
+    data = query.data
+
+    if data == 'help':
+        # Help button pressed, show the help message
+        help_command(update, context)
+
+    # Answer the callback query (remove the inline button prompt)
+    query.answer()
+
 def main():
-    """Start the Telegram bot."""
-    # Set up the Telegram bot updater and dispatcher
+    """Start the bot."""
+    # Create the Updater and pass it your bot's token
     updater = Updater(TOKEN, use_context=True)
+
+    # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
 
-    # Add command handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("bin", lookup_bin))
+    # Register the command handlers
+    dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(CommandHandler('help', help_command))
+    dispatcher.add_handler(CommandHandler('bin', lookup_bin))
+    dispatcher.add_handler(CommandHandler('grab', grab_stripe_details))
+
+    # Register the message handler to handle BIN lookup without a command
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, lookup_bin))
+
+    # Register the message handlers for grabbing Stripe details
+    dispatcher.add_handler(MessageHandler(Filters.text & Filters.regex(r'^https://checkout.stripe.com/'), process_stripe_link))
+    dispatcher.add_handler(MessageHandler(Filters.text & Filters.regex(r'^https://stripe.com/payments/'), process_stripe_link))
+
+    # Register the callback query handler for inline buttons
+    dispatcher.add_handler(CallbackQueryHandler(inline_button_callback))
 
     # Start the bot
     updater.start_polling()
+
+    # Run the bot until you press Ctrl-C
     updater.idle()
 
 if __name__ == '__main__':
