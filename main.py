@@ -36,14 +36,21 @@ def help_command(update, context):
     message += "/bin [BIN] - Lookup information about a specific BIN number.\n\n"
     message += "To perform a BIN lookup, simply send a message with a valid BIN number."
 
-    # Send the help message
-    update.message.reply_text(message)
+    # Inline keyboard button
+    button = InlineKeyboardButton('🌐 𓆩𝗫𝗲𝗿𝗿𝗼𝘅𓆪「Zone ↯」 🌐', url='https://t.me/xerrox_army')
+
+    # Create an inline keyboard with the button
+    keyboard = InlineKeyboardMarkup([[button]])
+
+    # Send the help message with image and inline keyboard
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://gifdb.com/images/file/dark-anime-sukuna-jujutsu-kaisen-q0s31n15yngza4mf.gif', caption=message, reply_markup=keyboard)
 
 
 def lookup_bin(update, context):
     """Handle the /bin command and perform BIN lookup."""
     # Extract the BIN number from the user's message
-    bin_number = update.message.text.split('/bin ')[1]
+    message_text = update.message.text
+    bin_number = re.findall(r'\d+', message_text)
 
     if not bin_number:
         # Guide the user on how to use the /bin command
@@ -52,6 +59,8 @@ def lookup_bin(update, context):
 
         update.message.reply_text(message)
         return
+
+    bin_number = bin_number[0]
 
     # Construct the API URL with the provided BIN number
     url = f"https://lookup.binlist.net/{bin_number}"
@@ -86,8 +95,14 @@ def lookup_bin(update, context):
         keyboard = InlineKeyboardMarkup([[button]])
 
         # Send the response message with monospace formatting and GIF
-        response_message = f"```\n{message}\n```"
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://gifdb.com/images/file/dark-anime-mattis-dovier-animation-jlbiiyihz0wn8ij0.gif', caption=response_message, parse_mode='Markdown', reply_markup=keyboard)
+        response_message = f"*{message}*"  # Monospace formatting for the message
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo='https://gifdb.com/images/file/dark-anime-mattis-dovier-animation-jlbiiyihz0wn8ij0.gif',
+            caption=response_message,
+            parse_mode='Markdown',
+            reply_markup=keyboard
+        )
     else:
         # Handle API request errors
         update.message.reply_text("An error occurred while performing the BIN lookup. Please try again later.")
