@@ -2,7 +2,7 @@
 import re
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
 # Define your Telegram bot token here
 TOKEN = '6112737138:AAGVMf3FtbLSsyETATGJR2zslIHohnVlUyQ'
@@ -17,13 +17,13 @@ def start(update, context):
     message += "2️⃣ Use the /help command to see the list of available commands and their usage.\n"
     message += "3️⃣ Enjoy exploring BIN information with the bot! 😊"
 
-    # Create an inline button for the /help command
+    # Inline keyboard button
     button = InlineKeyboardButton('🌐 𓆩𝗫𝗲𝗿𝗿𝗼𝘅𓆪「Zone ↯」 🌐', url='https://t.me/xerrox_army')
 
-    # Create an inline keyboard markup with the help button
-    button = InlineKeyboardButton('🌐 𓆩𝗫𝗲𝗿𝗿𝗼𝘅𓆪「Zone ↯」 🌐', url='https://t.me/xerrox_army')
+    # Create an inline keyboard with the button
+    keyboard = InlineKeyboardMarkup([[button]])
 
-    # Send the welcome message with image and inline button
+    # Send the welcome message with image and inline keyboard
     context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://i.ibb.co/GMCc1VV/XXX.jpg', caption=message, reply_markup=keyboard)
 
 
@@ -39,19 +39,17 @@ def help_command(update, context):
     # Send the help message
     update.message.reply_text(message)
 
+
 def lookup_bin(update, context):
-    """Handle the BIN lookup process."""
+    """Handle the /bin command and perform BIN lookup."""
     # Extract the BIN number from the user's message
     bin_number = update.message.text.split('/bin ')[1]
 
     # Construct the API URL with the provided BIN number
-    url = "https://lookup.binlist.net/" + bin_number
-
-    # Set the headers with the desired Accept-Version
-    headers = {'Accept-Version': '3'}
+    url = f"https://lookup.binlist.net/{bin_number}"
 
     # Send a GET request to the API
-    response = requests.get(url, headers=headers)
+    response = requests.get(url)
 
     if response.status_code == 200:
         # Parse the JSON response
@@ -69,48 +67,38 @@ def lookup_bin(update, context):
         # Prepare the response message with custom formatting and emojis
         message = f"✨ BIN: {bin_number}\n\n"
         message += f"💳 Scheme: {scheme}\n"
-        message += f"🏢 Brand: {brand}\n\n"
+        message += f"🏷️ Brand: {brand}\n"
         message += f"🏦 Bank: {bank_name}\n"
-        message += f"📞 Phone: {bank_phone}\n\n"
+        message += f"📞 Bank Phone: {bank_phone}\n"
         message += f"🌍 Country: {country_name} {country_emoji}\n"
         message += f"💰 Currency: {currency}"
 
-        # Create an inline button with custom styling
-        button = InlineKeyboardButton('🌐 𓆩𝗫𝗲𝗿𝗿𝗼𝘅𓆪「Zone ↯」 🌐', url='https://t.me/xerrox_army')
-
-        # Create an inline keyboard markup with the button
-        keyboard = InlineKeyboardMarkup([[button]])
-
-        # Reply to the user with the text message
-        update.message.reply_text(message, reply_markup=keyboard)
+        # Send the BIN lookup response message
+        update.message.reply_text(message)
     else:
-        update.message.reply_text("Sorry, an error occurred while looking up the BIN. Please try again later.")
+        # Handle API request errors
+        update.message.reply_text("An error occurred while performing the BIN lookup. Please try again later.")
 
-def process_number(update, context):
-    """Handle random number messages and trigger BIN lookup."""
-    # Extract the number from the user's message
-    number = re.findall(r'\d+', update.message.text)
-    if number:
-        bin_number = number[0]
-        # Perform BIN lookup using the obtained number
-        lookup_bin(update, context)
 
 def main():
-    # Create the Telegram updater and dispatcher
-    updater = Updater(TOKEN)
+    """Run the bot."""
+    # Create the Updater and pass it your bot's token
+    updater = Updater(TOKEN, use_context=True)
+
+    # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
 
-    # Register the command handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("bin", lookup_bin))
-
-    # Register the message handler to process random number messages
-    dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), process_number))
+    # Add command handlers
+    dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(CommandHandler('help', help_command))
+    dispatcher.add_handler(CommandHandler('bin', lookup_bin))
 
     # Start the bot
     updater.start_polling()
+
+    # Run the bot until you press Ctrl-C or the process receives SIGINT, SIGTERM or SIGABRT
     updater.idle()
+
 
 if __name__ == '__main__':
     main()
